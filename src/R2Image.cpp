@@ -515,14 +515,6 @@ Blur(double sigma)
 	}
 }
 
-
-// struct for feature detection, 10px apart
-typedef struct {
-  R2Pixel pixel;
-  int xCoord;
-  int yCoord;
-} ContextPixel;
-
 bool sortByPixelStrength(ContextPixel lhs, ContextPixel rhs) {
   return lhs.pixel.Luminance() > rhs.pixel.Luminance();
 }
@@ -692,28 +684,12 @@ double SSD_score(R2Image orig, R2Image comp, int x1, int y1, int x2, int y2) {
   return score;
 }
 
-typedef struct {
-  int x1;
-  int y1;
-  int x2;
-  int y2;
-  int x;
-  int y;
-  int supporters;
-  bool outlier;
-} TranslationVector;
-
 bool sortByNumSupporters(TranslationVector lhs, TranslationVector rhs) {
   return lhs.supporters > rhs.supporters;
 }
 
-void R2Image::
-blendOtherImageTranslated(R2Image * otherImage)
-{
-	// find at least 100 features on this image, and another 100 on the "otherImage". Based on these,
-	// compute the matching translation (pixel precision is OK), and blend the translated "otherImage"
-	// into this image with a 50% opacity.
-
+std::vector<ContextPixel> R2Image::
+findBestFeatures() {
   printf("Processing image Translation\n");
 
   R2Image originalImageHarris(*this);
@@ -765,12 +741,21 @@ blendOtherImageTranslated(R2Image * otherImage)
     index++;
   }
 
+  return foundFeatures;
+}
+
+std::vector<ContextPixel> R2Image::
+blendOtherImageTranslated(R2Image * otherImage, std::vector<ContextPixel> foundFeatures)
+{
+	// find at least 100 features on this image, and another 100 on the "otherImage". Based on these,
+	// compute the matching translation (pixel precision is OK), and blend the translated "otherImage"
+	// into this image with a 50% opacity.
+
   int searchWidth = width * 0.2;
   int searchHeight = height * 0.2;
   int featureSize = 5;
 
-
-  std::vector<ContextPixel> matchedFeatures(numFeat);
+  std::vector<ContextPixel> matchedFeatures(foundFeatures.size());
 
   // Find Matches using SSD
   for(int i=0; i<foundFeatures.size(); i++) {
@@ -815,84 +800,91 @@ blendOtherImageTranslated(R2Image * otherImage)
     //printf("Matched pixel (%d %d) with translated img pixel (%d %d)\n", curX, curY, newMatch.xCoord, newMatch.yCoord);
   }
 
-  // RANSAC
+  return matchedFeatures;
+}
 
-  // loop through all translation vectors (or limit, can just pick 100 times?)
-    // check all other vectors against it
+TranslationVector R2Image::
+vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) {
+    // RANSAC
 
-    // but all you should do is compute for eachthe difference vector between
-    // those, and find the length of that difference vector to understand how
-    // "good" it is
+    // loop through all translation vectors (or limit, can just pick 100 times?)
+      // check all other vectors against it
 
-    // count how many "supporters" it has, i.e. vectors that are within a
-    // threshold
+      // but all you should do is compute for eachthe difference vector between
+      // those, and find the length of that difference vector to understand how
+      // "good" it is
 
-  // pick the vector that has the most supporters, and then mark the
-  // ones within the threshold as "good" matches
+      // count how many "supporters" it has, i.e. vectors that are within a
+      // threshold
 
-  // or, take the average of all those matching vectors to mark outliers
-  //=====================================================================
+    // pick the vector that has the most supporters, and then mark the
+    // ones within the threshold as "good" matches
 
-  // Add translation vectors to array
-  std::vector<TranslationVector> translationVectors(numFeat);
+    // or, take the average of all those matching vectors to mark outliers
+    //=====================================================================
 
-  for(int i=0; i<numFeat; i++) {
-    TranslationVector vec;
-    vec.x1 = foundFeatures.at(i).xCoord;
-    vec.y1 = foundFeatures.at(i).yCoord;
-    vec.x2 = matchedFeatures.at(i).xCoord;
-    vec.y2 = matchedFeatures.at(i).yCoord;
-    vec.x = vec.x2 - vec.x1;
-    vec.y = vec.y2 - vec.y1;
-    //printf("translationVector %d x: %d y: %d\n", i, vec.x, vec.y);
-    translationVectors.push_back(vec);
-  }
+    // Add translation vectors to array
+    std::vector<TranslationVector> translationVectors(after.size());
 
-  // compensate for bug that causes 150 error values at beginning of array??
-  translationVectors.erase(translationVectors.begin(), translationVectors.begin()+150);
+    for(int i=0; i<after.size(); i++) {
+      TranslationVector vec;
+      vec.x1 = before.at(i).xCoord;
+      vec.y1 = before.at(i).yCoord;
+      vec.x2 = after.at(i).xCoord;
+      vec.y2 = after.at(i).yCoord;
+      vec.x = vec.x2 - vec.x1;
+      vec.y = vec.y2 - vec.y1;
+      printf("translationVector %d x: %d y: %d\n", i, vec.x, vec.y);
+      translationVectors.push_back(vec);
+    }
 
-  // RANSAC
-  double acceptThresh = 5.0;
+    // compensate for bug that causes 150 error values at beginning of array??
+    translationVectors.erase(translationVectors.begin(), translationVectors.begin()+150);
 
-  // score each vector based on similarity to other vectors
-  for(int i=0; i<translationVectors.size(); i++) {
-    TranslationVector vec1 = translationVectors.at(i);
-    vec1.supporters = 0;
-    for(int j=0; j<translationVectors.size(); j++) {
-      TranslationVector vec2 = translationVectors.at(j);
-      int xDiff = vec2.x - vec1.x;
-      int yDiff = vec2.y - vec1.y;
-      double diffLength = sqrt(xDiff*xDiff + yDiff*yDiff); // dist formula
+    // RANSAC
+    double acceptThresh = 5.0;
+
+    // score each vector based on similarity to other vectors
+    for(int i=0; i<translationVectors.size(); i++) {
+      TranslationVector vec1 = translationVectors.at(i);
+      vec1.supporters = 0;
+      for(int j=0; j<translationVectors.size(); j++) {
+        TranslationVector vec2 = translationVectors.at(j);
+        int xDiff = vec2.x - vec1.x;
+        int yDiff = vec2.y - vec1.y;
+        double diffLength = sqrt(xDiff*xDiff + yDiff*yDiff); // dist formula
+        // if the length of the difference vector is less than the threshold
+        //printf("xDiff: %d yDiff: %d diffLength: %f\n", xDiff, yDiff, diffLength);
+        if(diffLength < acceptThresh) {
+          // increment num of supporters
+          vec1.supporters++;
+        }
+      }
+      vec1.supporters -= 150;
+      //printf("vector %d has %d supporters\n", i, vec1.supporters);
+    }
+
+    std::sort(translationVectors.begin(), translationVectors.end(), sortByNumSupporters);
+    TranslationVector winner = translationVectors.at(0);
+
+  /*
+    // draw vectors in different colors based on status
+    for(int i=0; i<translationVectors.size(); i++) {
+      TranslationVector comp = translationVectors.at(i);
+      int xDiff = comp.x - winner.x;
+      int yDiff = comp.y - winner.y;
+      double diffLength = sqrt(xDiff*xDiff + yDiff*yDiff); // dist form
       // if the length of the difference vector is less than the threshold
-      //printf("xDiff: %d yDiff: %d diffLength: %f\n", xDiff, yDiff, diffLength);
-      if(diffLength < acceptThresh) {
-        // increment num of supporters
-        vec1.supporters++;
+      comp.outlier = diffLength > acceptThresh;
+      if(comp.outlier) {
+        line(comp.x1, comp.x2, comp.y1, comp.y2, 1.0, 0.0, 0.0);
+      }
+      else {
+        line(comp.x1, comp.x2, comp.y1, comp.y2, 0.0, 1.0, 0.0);
       }
     }
-    vec1.supporters -= 150;
-    //printf("vector %d has %d supporters\n", i, vec1.supporters);
-  }
-
-  std::sort(translationVectors.begin(), translationVectors.end(), sortByNumSupporters);
-  TranslationVector winner = translationVectors.at(0);
-
-  // draw vectors in different colors based on status
-  for(int i=0; i<translationVectors.size(); i++) {
-    TranslationVector comp = translationVectors.at(i);
-    int xDiff = comp.x - winner.x;
-    int yDiff = comp.y - winner.y;
-    double diffLength = sqrt(xDiff*xDiff + yDiff*yDiff); // dist form
-    // if the length of the difference vector is less than the threshold
-    comp.outlier = diffLength > acceptThresh;
-    if(comp.outlier) {
-      line(comp.x1, comp.x2, comp.y1, comp.y2, 1.0, 0.0, 0.0);
-    }
-    else {
-      line(comp.x1, comp.x2, comp.y1, comp.y2, 0.0, 1.0, 0.0);
-    }
-  }
-
+    */
+    return winner;
 }
 
 double* matrixMult(double** mat, double* vec) {

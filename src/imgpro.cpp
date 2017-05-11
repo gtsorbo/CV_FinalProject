@@ -24,7 +24,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <dirent.h>
 #include "R2/R2.h"
 #include "R2Pixel.h"
 #include "R2Image.h"
@@ -212,7 +211,7 @@ main(int argc, char **argv)
       CheckOption(*argv, argc, 2);
       R2Image *other_image = new R2Image(argv[1]);
       argv += 2, argc -= 2;
-      image->blendOtherImageTranslated(other_image);
+      //image->blendOtherImageTranslated(other_image);
       delete other_image;
     }
     else if (!strcmp(*argv, "-matchHomography")) {
@@ -254,13 +253,19 @@ main(int argc, char **argv)
       std::string output_name = token_output + "." + image_count_1 + "_output.jpg";
       strcpy(output_image_name, output_name.c_str());
 
+
+
+      std::vector<ContextPixel> foundFeatures = image->findBestFeatures();
+      std::vector<ContextPixel> matchedFeatures;
+      std::vector<TranslationVector> motionVectors;
+
       // Process translations
       while (image->Read(image_name_1.c_str()) && other_image->Read(image_name_2.c_str())) {
         printf("%s  %s\n", image_name_1.c_str(), image_name_2.c_str());
 
         current_count++;
 
-        // FILENAME INCREMENTING
+        // Filename incrementing
         image_count_1 = std::to_string(current_count);
         image_count_2 = std::to_string(current_count+1);
         while(image_count_1.length() < count_length) {
@@ -274,9 +279,13 @@ main(int argc, char **argv)
         output_name = token_output + "." + image_count_1 + "_ouput.jpg";
         strcpy(output_image_name, output_name.c_str());
 
-        image->blendOtherImageTranslated(other_image);
-        //image->Harris(strength);
-        image->Write(output_image_name);
+        matchedFeatures = image->blendOtherImageTranslated(other_image, foundFeatures);
+        TranslationVector winner = image-> vectorRANSAC(foundFeatures, matchedFeatures);
+        motionVectors.push_back(winner);
+        foundFeatures = matchedFeatures;
+        printf("x1: %d y1: %d x2: %d y2: %d\n", winner.x1, winner.y1, winner.x2, winner.y2);
+
+        //image->Write(output_image_name);
       }
 
     }

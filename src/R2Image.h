@@ -30,10 +30,25 @@ typedef enum {
   R2_IMAGE_XOR_COMPOSITION,
 } R2ImageCompositeOperation;
 
+// some extra structs
+typedef struct {
+  R2Pixel pixel;
+  int xCoord;
+  int yCoord;
+} ContextPixel;
 
+typedef struct {
+  int x1;
+  int y1;
+  int x2;
+  int y2;
+  int x;
+  int y;
+  int supporters;
+  bool outlier;
+} TranslationVector;
 
 // Class definition
-
 class R2Image {
  public:
   // Constructors/destructor
@@ -86,8 +101,11 @@ class R2Image {
   void line(int x0, int x1, int y0, int y1, float r, float g, float b);
 
   // further operations
-  void blendOtherImageTranslated(R2Image * otherImage);
+  std::vector<ContextPixel> blendOtherImageTranslated(R2Image * otherImage, std::vector<ContextPixel> foundFeatures);
   void blendOtherImageHomography(R2Image * otherImage);
+
+  std::vector<ContextPixel> findBestFeatures();
+  TranslationVector vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after);
 
   // File reading/writing
   int Read(const char *filename);
@@ -197,7 +215,5 @@ SetPixel(int x, int y, const R2Pixel& pixel)
   // Set pixel
   pixels[x*height + y] = pixel;
 }
-
-
 
 #endif
