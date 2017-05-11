@@ -690,7 +690,7 @@ bool sortByNumSupporters(TranslationVector lhs, TranslationVector rhs) {
 
 std::vector<ContextPixel> R2Image::
 findBestFeatures() {
-  printf("Processing image Translation\n");
+  printf("Finding best features\n");
 
   R2Image originalImageHarris(*this);
 
@@ -734,7 +734,7 @@ findBestFeatures() {
 
     // draw boxes around highest-scoring pixels from highest to lowest, add said pixel to foundFeatures vector
     if(pixelIsValid) {
-      //printf("added a valid pixel index: %d x: %d y: %d\n", index, currentPixel.xCoord, currentPixel.yCoord);
+      printf("added a valid pixel index: %d x: %d y: %d\n", index, currentPixel.xCoord, currentPixel.yCoord);
       foundFeatures.at(featCount) = currentPixel;
       featCount++;
     }
@@ -750,6 +750,8 @@ blendOtherImageTranslated(R2Image * otherImage, std::vector<ContextPixel> foundF
 	// find at least 100 features on this image, and another 100 on the "otherImage". Based on these,
 	// compute the matching translation (pixel precision is OK), and blend the translated "otherImage"
 	// into this image with a 50% opacity.
+
+  printf("matching features\n");
 
   int searchWidth = width * 0.2;
   int searchHeight = height * 0.2;
@@ -797,7 +799,7 @@ blendOtherImageTranslated(R2Image * otherImage, std::vector<ContextPixel> foundF
     newMatch.yCoord = bestMatch.yCoord;
 
     matchedFeatures.at(i) = newMatch;
-    //printf("Matched pixel (%d %d) with translated img pixel (%d %d)\n", curX, curY, newMatch.xCoord, newMatch.yCoord);
+    printf("Matched pixel (%d %d) with translated img pixel (%d %d)\n", curX, curY, newMatch.xCoord, newMatch.yCoord);
   }
 
   return matchedFeatures;
@@ -834,7 +836,7 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
       vec.y2 = after.at(i).yCoord;
       vec.x = vec.x2 - vec.x1;
       vec.y = vec.y2 - vec.y1;
-      printf("translationVector %d x: %d y: %d\n", i, vec.x, vec.y);
+      //printf("translationVector %d x: %d y: %d\n", i, vec.x, vec.y);
       translationVectors.push_back(vec);
     }
 
@@ -867,7 +869,7 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
     std::sort(translationVectors.begin(), translationVectors.end(), sortByNumSupporters);
     TranslationVector winner = translationVectors.at(0);
 
-  /*
+
     // draw vectors in different colors based on status
     for(int i=0; i<translationVectors.size(); i++) {
       TranslationVector comp = translationVectors.at(i);
@@ -883,7 +885,7 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
         line(comp.x1, comp.x2, comp.y1, comp.y2, 0.0, 1.0, 0.0);
       }
     }
-    */
+    
     return winner;
 }
 
