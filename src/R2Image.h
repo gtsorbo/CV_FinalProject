@@ -33,9 +33,16 @@ typedef enum {
 // some extra structs
 typedef struct {
   R2Pixel pixel;
-  int xCoord;
-  int yCoord;
+  int x;
+  int y;
 } ContextPixel;
+
+typedef struct {
+  R2Pixel pixel;
+  int x;
+  int y;
+  double score;
+} SSD_pixel;
 
 typedef struct {
   int x1;
