@@ -744,6 +744,13 @@ findBestFeatures() {
   return foundFeatures;
 }
 
+struct HarrisPixel {
+    // Struct for pixel and its location
+    R2Pixel harris_pixel;
+    int x;
+    int y;
+};
+
 std::vector<ContextPixel> R2Image::
 blendOtherImageTranslated(R2Image * otherImage, std::vector<ContextPixel> foundFeatures)
 {
@@ -751,58 +758,118 @@ blendOtherImageTranslated(R2Image * otherImage, std::vector<ContextPixel> foundF
 	// compute the matching translation (pixel precision is OK), and blend the translated "otherImage"
 	// into this image with a 50% opacity.
 
-  printf("matching features\n");
+  // Define the search dimensions
+    int search_width = width*0.2; // Length of width and height of search area
+    int search_height = height*0.2;
+    int width_from_center = 0.5*search_width; // Distance of width and height the origin pixel
+    int height_from_center = 0.5*search_height;
+    int width_around_feature = search_width/50; // Side length of pixels we want to check within the search region
+    int height_around_feature = search_height/50;
 
-  int searchWidth = width * 0.2;
-  int searchHeight = height * 0.2;
-  int featureSize = 5;
+    // Vector to hold best matching features
+    std::vector<SSDTrackingPixel>matched_features;
 
-  std::vector<ContextPixel> matchedFeatures(foundFeatures.size());
+    // Vector to hold matching vectors for ransac
+    std::vector<RANSACVector>matched_vectors;
 
-  // Find Matches using SSD
-  for(int i=0; i<foundFeatures.size(); i++) {
-    ContextPixel currentPixel = foundFeatures.at(i);
-    //printf("Matching feature pixel #%d, x: %d y: %d luminance: %f\n", i, currentPixel.xCoord, currentPixel.yCoord, currentPixel.pixel.Luminance());
+    // Run the search
 
-    int curX = currentPixel.xCoord;
-    int curY = currentPixel.yCoord;
-    SSD_pixel bestMatch;
-    bestMatch.score = 9999999;
+    for (int i = 0; i < finalArray.size(); i++) {
+        HarrisPixel curr_feature = finalArray.at(i);
+        int feature_x = curr_feature.x;
+        int feature_y = curr_feature.y;
 
-    // looping within search area to find a matched feature
-    for(int x=(-1*searchWidth/2); x<(searchWidth/2); x++) {
-      for(int y=(-1*searchHeight/2); y<(searchHeight/2); y++) {
-        // for each pixel in the search window, calculate the SSD
-        // score for the feature area around it
-        int adjX = curX + x;
-        int adjY = curY + y;
+        // Initialize central pixel to hold SSD
+        SSDTrackingPixel match_feature;
+        match_feature.SSD = 1000000000000000000;
 
-        // SSD scoring procedure
-        double score = 0;
-        // sums squared difference of pixels for featureSize^2 pixel area
-        for(int a=(-1*featureSize); a<featureSize; a++) {
-          for(int b=(-1*featureSize); b<featureSize; b++) {
-            double diff = Pixel(pixelEdgeCase(curX+a, width), pixelEdgeCase(curY+b, height)).Luminance() - otherImage->Pixel(pixelEdgeCase(adjX+a, width), pixelEdgeCase(adjY+b, height)).Luminance();
-            score += diff*diff;
-          }
+        for (int x = feature_x - width_from_center; x < feature_x + width_from_center; x++) {
+            for (int y = feature_y - height_from_center; y < feature_y + height_from_center; y++) {
+
+                double ssd = 0;
+
+                for (int a = -width_around_feature; a < width_around_feature; a++) {
+                    for (int b = -height_around_feature; b < height_around_feature; b++) {
+
+                        // Calculate SSD
+                        R2Pixel match_pix = Pixel(pixelEdgeCase(x + a, width), pixelEdgeCase(y + b, height));
+                        R2Pixel old_pix = otherImage->Pixel(pixelEdgeCase(feature_x + a, width),
+                                                            pixelEdgeCase(feature_y + b, height));
+                        double diff = (match_pix.Red() + match_pix.Green() + match_pix.Blue()) -
+                                      (old_pix.Red() + old_pix.Green() + old_pix.Blue());
+                        ssd += (diff * diff);
+                    }
+                }
+
+                if (ssd < match_feature.SSD) {
+
+                    // Build central pixel with SSD
+                    int middle_x = pixelEdgeCase(x + (0.5 * width_around_feature), width);
+                    int middle_y = pixelEdgeCase(y + (0.5 * height_around_feature), height);
+                    R2Pixel middle_pix = Pixel(middle_x, middle_y);
+                    match_feature.harris_pixel = middle_pix;
+                    match_feature.x = middle_x;
+                    match_feature.y = middle_y;
+                    match_feature.SSD = ssd;
+                }
+            }
         }
-        if(score < bestMatch.score) {
-          bestMatch.xCoord = adjX;
-          bestMatch.yCoord = adjY;
-          bestMatch.score = score;
-        }
-      }
-    }
-    ContextPixel newMatch;
 
-    newMatch.xCoord = bestMatch.xCoord;
-    newMatch.yCoord = bestMatch.yCoord;
+        // Push feature with lowest SSD to vector
+        matched_features.push_back(match_feature);
 
-    matchedFeatures.at(i) = newMatch;
-    printf("Matched pixel (%d %d) with translated img pixel (%d %d)\n", curX, curY, newMatch.xCoord, newMatch.yCoord);
-  }
-
-  return matchedFeatures;
+  // printf("matching features\n");
+  //
+  // int searchWidth = width * 0.2;
+  // int searchHeight = height * 0.2;
+  // int featureSize = 5;
+  //
+  // std::vector<ContextPixel> matchedFeatures(foundFeatures.size());
+  //
+  // // Find Matches using SSD
+  // for(int i=0; i<foundFeatures.size(); i++) {
+  //   ContextPixel currentPixel = foundFeatures.at(i);
+  //   //printf("Matching feature pixel #%d, x: %d y: %d luminance: %f\n", i, currentPixel.xCoord, currentPixel.yCoord, currentPixel.pixel.Luminance());
+  //
+  //   int curX = currentPixel.xCoord;
+  //   int curY = currentPixel.yCoord;
+  //   SSD_pixel bestMatch;
+  //   bestMatch.score = 9999999;
+  //
+  //   // looping within search area to find a matched feature
+  //   for(int x=(-1*searchWidth/2); x<(searchWidth/2); x++) {
+  //     for(int y=(-1*searchHeight/2); y<(searchHeight/2); y++) {
+  //       // for each pixel in the search window, calculate the SSD
+  //       // score for the feature area around it
+  //       int adjX = curX + x;
+  //       int adjY = curY + y;
+  //
+  //       // SSD scoring procedure
+  //       double score = 0;
+  //       // sums squared difference of pixels for featureSize^2 pixel area
+  //       for(int a=(-1*featureSize); a<featureSize; a++) {
+  //         for(int b=(-1*featureSize); b<featureSize; b++) {
+  //           double diff = Pixel(pixelEdgeCase(curX+a, width), pixelEdgeCase(curY+b, height)).Luminance() - otherImage->Pixel(pixelEdgeCase(adjX+a, width), pixelEdgeCase(adjY+b, height)).Luminance();
+  //           score += diff*diff;
+  //         }
+  //       }
+  //       if(score < bestMatch.score) {
+  //         bestMatch.xCoord = adjX;
+  //         bestMatch.yCoord = adjY;
+  //         bestMatch.score = score;
+  //       }
+  //     }
+  //   }
+  //   ContextPixel newMatch;
+  //
+  //   newMatch.xCoord = bestMatch.xCoord;
+  //   newMatch.yCoord = bestMatch.yCoord;
+  //
+  //   matchedFeatures.at(i) = newMatch;
+  //   printf("Matched pixel (%d %d) with translated img pixel (%d %d)\n", curX, curY, newMatch.xCoord, newMatch.yCoord);
+  // }
+  //
+  // return matchedFeatures;
 }
 
 TranslationVector R2Image::
@@ -885,7 +952,7 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
         line(comp.x1, comp.x2, comp.y1, comp.y2, 0.0, 1.0, 0.0);
       }
     }
-    
+
     return winner;
 }
 
