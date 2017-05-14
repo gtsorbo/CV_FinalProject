@@ -112,7 +112,7 @@ class R2Image {
   void blendOtherImageHomography(R2Image * otherImage);
 
   std::vector<ContextPixel> findBestFeatures();
-  TranslationVector vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after);
+  std::vector<TranslationVector> vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after);
 
   // File reading/writing
   int Read(const char *filename);

@@ -807,7 +807,7 @@ blendOtherImageTranslated(R2Image * otherImage, std::vector<ContextPixel> foundF
   return matchedFeatures;
 }
 
-TranslationVector R2Image::
+std::vector<TranslationVector> R2Image::
 vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) {
     // RANSAC
 
@@ -840,7 +840,7 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
       vec.y = vec.y2 - vec.y1;
       vec.outlier = false;
       vec.supporters = 0;
-      //printf("translationVector %d x: %d y: %d\n", i, vec.x, vec.y);
+      printf("translationVector %d x: %d y: %d\n", i, vec.x, vec.y);
       translationVectors.push_back(vec);
     }
 
@@ -886,13 +886,14 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
       comp.outlier = diffLength > acceptThresh;
       if(comp.outlier) {
         line(comp.x1, comp.x2, comp.y1, comp.y2, 1.0, 0.0, 0.0);
+
       }
       else {
         line(comp.x1, comp.x2, comp.y1, comp.y2, 0.0, 1.0, 0.0);
       }
     }
 
-    return winner;
+    return translationVectors;
 }
 
 double* matrixMult(double** mat, double* vec) {

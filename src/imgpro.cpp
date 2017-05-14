@@ -279,8 +279,15 @@ main(int argc, char **argv)
 
         // find matched features in next image
         matchedFeatures = image->blendOtherImageTranslated(other_image, foundFeatures);
-        TranslationVector winner = image-> vectorRANSAC(foundFeatures, matchedFeatures);
+        std::vector<TranslationVector> vectors = image-> vectorRANSAC(foundFeatures, matchedFeatures);
+        TranslationVector winner = vectors.at(0);
         motionVectors.push_back(winner);
+        for(int i=0; i<vectors.size(); i++) {
+          if(vectors.at(i).outlier) {
+            matchedFeatures.erase(matchedFeatures.begin() + i);
+            printf("deleted an outlier\n");
+          }
+        }
         foundFeatures = matchedFeatures;
         printf("x1: %d y1: %d x2: %d y2: %d\n", winner.x1, winner.y1, winner.x2, winner.y2);
 
