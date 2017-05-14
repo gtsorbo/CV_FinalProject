@@ -841,13 +841,10 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
       vec.outlier = false;
       vec.supporters = 0;
       printf("translationVector %d x: %d y: %d\n", i, vec.x, vec.y);
-      translationVectors.push_back(vec);
+      translationVectors.at(i) = vec;
     }
 
     int numFeat = 150;
-
-    // compensate for bug that causes 150 error values at beginning of array??
-    translationVectors.erase(translationVectors.begin(), translationVectors.begin()+numFeat);
 
     // RANSAC
     double acceptThresh = 10.0;
@@ -868,7 +865,7 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
           vec1.supporters++;
         }
       }
-      vec1.supporters -= numFeat;
+      //vec1.supporters -= numFeat;
       //printf("vector %d has %d supporters\n", i, vec1.supporters);
     }
 
@@ -916,7 +913,6 @@ bool sortHomogByNumSupporters(HomographyMat lhs, HomographyMat rhs) {
 
 void R2Image::
 blendOtherImageHomography(R2Image * otherImage)
-{
 
   // find at least 100 features on this image, and another 100 on the "otherImage". Based on these,
 	// compute the matching translation (pixel precision is OK), and blend the translated "otherImage"
@@ -1032,11 +1028,8 @@ blendOtherImageHomography(R2Image * otherImage)
     vec.y2 = matchedFeatures.at(i).y;
     vec.x = vec.x2 - vec.x1;
     vec.y = vec.y2 - vec.y1;
-    translationVectors.push_back(vec);
+    translationVectors.at(i) = vec;
   }
-  // compensate for bug that causes 150 error values at beginning of array??
-  translationVectors.erase(translationVectors.begin(), translationVectors.begin()+150);
-
 
   int numTrials = 500;
   double acceptThresh = 5.0;
