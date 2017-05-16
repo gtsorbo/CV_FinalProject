@@ -755,8 +755,10 @@ blendOtherImageTranslated(R2Image * otherImage, std::vector<ContextPixel> foundF
 
   printf("matching features\n");
 
-  int searchWidth = width * 0.1;
-  int searchHeight = height * 0.1;
+  double searchMult = 0.08;
+
+  int searchWidth = width * searchMult;
+  int searchHeight = height * searchMult;
   int featureSize = 5;
 
   std::vector<ContextPixel> matchedFeatures(foundFeatures.size());
@@ -847,7 +849,7 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
     int numFeat = 150;
 
     // RANSAC
-    double acceptThresh = 10.0;
+    double acceptThresh = 15.0;
 
     // score each vector based on similarity to other vectors
     for(int i=0; i<translationVectors.size(); i++) {
@@ -883,7 +885,7 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
       comp.outlier = diffLength > acceptThresh;
       if(comp.outlier) {
         line(comp.x1, comp.x2, comp.y1, comp.y2, 1.0, 0.0, 0.0);
-
+        //translationVectors.erase(translationVectors.begin() + i);
       }
       else {
         line(comp.x1, comp.x2, comp.y1, comp.y2, 0.0, 1.0, 0.0);
@@ -912,7 +914,7 @@ bool sortHomogByNumSupporters(HomographyMat lhs, HomographyMat rhs) {
 }
 
 void R2Image::
-blendOtherImageHomography(R2Image * otherImage)
+blendOtherImageHomography(R2Image * otherImage) {
 
   // find at least 100 features on this image, and another 100 on the "otherImage". Based on these,
 	// compute the matching translation (pixel precision is OK), and blend the translated "otherImage"

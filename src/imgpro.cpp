@@ -282,17 +282,42 @@ main(int argc, char **argv)
         std::vector<TranslationVector> vectors = image-> vectorRANSAC(foundFeatures, matchedFeatures);
         TranslationVector winner = vectors.at(0);
         motionVectors.push_back(winner);
-        for(int i=0; i<vectors.size(); i++) {
-          if(vectors.at(i).outlier) {
-            matchedFeatures.erase(matchedFeatures.begin() + i);
-            printf("deleted an outlier\n");
-          }
-        }
         foundFeatures = matchedFeatures;
         printf("x1: %d y1: %d x2: %d y2: %d\n", winner.x1, winner.y1, winner.x2, winner.y2);
 
-        image->Write(output_image_name);
+        //image->Write(output_image_name);
       }
+
+      // Smoothing function
+
+      double x_smoothed[motionVectors.size()];
+      double y_smoothed[motionVectors.size()];
+
+      int blur_width = 2;
+
+      for(int i=0; i<motionVectors.size(), i++) {
+        // find avg x, y value
+        double x_sum = 0.0;
+        double y_sum = 0.0;
+
+        for(int j=-1*blur_width; j<blur_width+1; j++) {
+          int fixedIndex = i+j;
+          if(i+j < 0) {
+            fixedIndex = i;
+          }
+          else if(i+j >= motionVectors.size()) {
+            fixedIndex = motionVectors.size()-1;
+          }
+          TranslationVector vec = motionVectors.at(fixedIndex);
+          x_sum += vec.x2 - vec.x1;
+          y_sum += vec.y2 - vec.y1;
+        }
+
+        x_smoothed[i] = x_sum / blur_width*2+1;
+        y_smoothed[i] = y_sum / blur_width*2+1;
+        printf("x smoothed: %f, y smoothed:%f\n", x_smoothed[i], y_smoothed[i]);
+      }
+
 
     }
     else {
