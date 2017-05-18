@@ -905,8 +905,8 @@ translateImageForStabilization(TranslationVector actualMotion, double x_sm, doub
     }
   }
 
-  double XDiff = x_sm - (actualMotion.x2-actualMotion.x1);
-  double YDiff = y_sm - (actualMotion.y2-actualMotion.y1);
+  double XDiff = (actualMotion.x2-actualMotion.x1) - x_sm;
+  double YDiff = (actualMotion.y2-actualMotion.y1) - y_sm;
 
   printf("xdiff:%f ydiff:%f\n", XDiff, YDiff);
 
@@ -922,7 +922,7 @@ translateImageForStabilization(TranslationVector actualMotion, double x_sm, doub
         // skip
       }
       else {
-        printf("moving pixel x:%d y:%d to x:%d y:%d\n", x, y, newX, newY);
+        //printf("moving pixel x:%d y:%d to x:%d y:%d\n", x, y, newX, newY);
         SetPixel(newX, newY, orig.Pixel(x,y));
       }
     }
