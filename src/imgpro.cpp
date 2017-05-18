@@ -238,6 +238,7 @@ main(int argc, char **argv)
       //printf("%s  %s  %f\n", token.c_str(), count.c_str(), strength);
       int count_length = count.length();
       int current_count = std::stoi(count);
+      int start_count = current_count;
       R2Image *other_image = new R2Image();
       std::string image_count_1 = std::to_string(current_count);
       std::string image_count_2 = std::to_string(current_count+1);
@@ -289,13 +290,12 @@ main(int argc, char **argv)
       }
 
       // Smoothing function
-
       double x_smoothed[motionVectors.size()];
       double y_smoothed[motionVectors.size()];
 
-      int blur_width = 2;
+      int blur_width = strength;
 
-      for(int i=0; i<motionVectors.size(), i++) {
+      for(int i=0; i<motionVectors.size(); i++) {
         // find avg x, y value
         double x_sum = 0.0;
         double y_sum = 0.0;
@@ -315,10 +315,36 @@ main(int argc, char **argv)
 
         x_smoothed[i] = x_sum / blur_width*2+1;
         y_smoothed[i] = y_sum / blur_width*2+1;
-        printf("x smoothed: %f, y smoothed:%f\n", x_smoothed[i], y_smoothed[i]);
+        //printf("x smoothed: %f, y smoothed:%f\n", x_smoothed[i], y_smoothed[i]);
       }
 
+      // apply smoothing and output images
+      // second pass over files
 
+      // Process translations
+      for (int i=0; i<motionVectors.size(); i++) {
+        int current_count = i+1;
+
+        // Filename incrementing
+        image_count_1 = std::to_string(current_count);
+        while(image_count_1.length() < count_length) {
+          image_count_1 = "0" + image_count_1;
+        }
+        image_name_1 = token + "." + image_count_1 + ".jpg";
+        output_name = token_output + "." + image_count_1 + "_ouput.jpg";
+        strcpy(output_image_name, output_name.c_str());
+
+        printf("before new read\n");
+        image->Read(image_name_1.c_str());
+        printf("after new read\n");
+
+        // run stabilization per frame
+        printf("Adjusting: %s\n", image_name_1.c_str());
+        image->translateImageForStabilization(motionVectors.at(i), x_smoothed[i], y_smoothed[i]);
+        printf("after stabilization\n");
+        image->Write(output_image_name);
+        printf("after write\n");
+      }
     }
     else {
       // Unrecognized program argument

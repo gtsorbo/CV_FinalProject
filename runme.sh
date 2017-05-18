@@ -19,4 +19,4 @@ popd
 
 # generate the result pictures
 
-src/imgpro testSequence/test.0000001.jpg output/test.0000001_output.jpg -stabilize 1.0;
+src/imgpro testSequence/test.0000001.jpg output/test.0000001_output.jpg -stabilize 2.0;

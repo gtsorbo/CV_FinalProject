@@ -895,6 +895,44 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
     return translationVectors;
 }
 
+void R2Image::
+translateImageForStabilization(TranslationVector actualMotion, double x_sm, double y_sm) {
+  R2Image orig(*this);
+
+  for(int x=0; x<width; x++) {
+    for(int y=0; y<height; y++) {
+      SetPixel(x, y, R2black_pixel);
+    }
+  }
+
+  double XDiff = x_sm - (actualMotion.x2-actualMotion.x1);
+  double YDiff = y_sm - (actualMotion.y2-actualMotion.y1);
+
+  printf("xdiff:%f ydiff:%f\n", XDiff, YDiff);
+
+  // move pixels by (smooth - actual) translation diff
+  for(int x=0; x<orig.width; x++) {
+    for(int y=0; y<orig.height; y++) {
+
+      int newX = x+XDiff;
+      int newY = y+YDiff;
+      //printf("newX:%d newY:%d\n", newX, newY);
+
+      if(newX < 0 || newY < 0 || newX > width || newY > height) {
+        // skip
+      }
+      else {
+        printf("moving pixel x:%d y:%d to x:%d y:%d\n", x, y, newX, newY);
+        SetPixel(newX, newY, orig.Pixel(x,y));
+      }
+    }
+  }
+}
+
+
+
+
+
 double* matrixMult(double** mat, double* vec) {
   double* resultVec = dvector(0,3);
   for(int i=0; i<3; i++) {
@@ -1326,7 +1364,7 @@ ReadBMP(const char *filename)
   // Open file
   FILE *fp = fopen(filename, "rb");
   if (!fp) {
-	fprintf(stderr, "Unable to open image file: %s", filename);
+	fprintf(stderr, "Unable to open image file: %s\n", filename);
 	return 0;
   }
 
