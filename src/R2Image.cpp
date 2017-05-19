@@ -830,7 +830,11 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
     //=====================================================================
 
     // Add translation vectors to array
-    std::vector<TranslationVector> translationVectors(after.size());
+    std::vector<TranslationVector> translationVectors;
+
+    for(int i=0; i<before.size(); i++) {
+      //printf("before x: %d y: %d || after x: %d y: %d\n", before.at(i).x, before.at(i).y, after.at(i).x, after.at(i).y);
+    }
 
     for(int i=0; i<after.size(); i++) {
       TranslationVector vec;
@@ -843,10 +847,10 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
       vec.outlier = false;
       vec.supporters = 0;
       //printf("translationVector %d x: %d y: %d\n", i, vec.x, vec.y);
-      translationVectors.at(i) = vec;
+      translationVectors.push_back(vec);
     }
 
-    int numFeat = 150;
+    //int numFeat = 150;
 
     // RANSAC
     double acceptThresh = 10.0;
@@ -854,25 +858,32 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
     // score each vector based on similarity to other vectors
     for(int i=0; i<translationVectors.size(); i++) {
       TranslationVector vec1 = translationVectors.at(i);
-      vec1.supporters = 0;
+      //vec1.supporters = 0;
       for(int j=0; j<translationVectors.size(); j++) {
         TranslationVector vec2 = translationVectors.at(j);
+
         int xDiff = vec2.x - vec1.x;
         int yDiff = vec2.y - vec1.y;
+
         double diffLength = sqrt(xDiff*xDiff + yDiff*yDiff); // dist formula
         // if the length of the difference vector is less than the threshold
         //printf("xDiff: %d yDiff: %d diffLength: %f\n", xDiff, yDiff, diffLength);
         if(diffLength < acceptThresh) {
           // increment num of supporters
-          vec1.supporters++;
+          translationVectors.at(i).supporters++;
         }
       }
       //vec1.supporters -= numFeat;
       //printf("vector %d has %d supporters\n", i, vec1.supporters);
     }
 
-    std::sort(translationVectors.begin(), translationVectors.end(), sortByNumSupporters);
+    std::sort(std::begin(translationVectors), std::end(translationVectors), sortByNumSupporters);
+    for(int i=0; i<translationVectors.size(); i++) {
+      TranslationVector vec = translationVectors.at(i);
+      //printf("TV x1 %d y1 %d x2 %d y2 %d x %d y %d supporters %d\n", vec.x1, vec.y1, vec.x2, vec.y2, vec.x, vec.y, vec.supporters);
+    }
     TranslationVector winner = translationVectors.at(0);
+    //printf("winning vector x: %d y: %d supporters: %d\n", winner.x, winner.y, winner.supporters);
 
 
     // draw vectors in different colors based on status

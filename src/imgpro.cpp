@@ -315,10 +315,10 @@ main(int argc, char **argv)
         foundFeatures = RANSACDmatchedFeatures;
         //printf("x1: %d y1: %d x2: %d y2: %d\n", winner.x1, winner.y1, winner.x2, winner.y2);
 
-        image->Write(output_image_name);
+        //image->Write(output_image_name);
       }
 
-/*
+
       // Smoothing function
       double x_smoothed[motionVectors.size()];
       double y_smoothed[motionVectors.size()];
@@ -347,9 +347,9 @@ main(int argc, char **argv)
         y_smoothed[i] = y_sum / blur_width*2+1;
         //printf("x smoothed: %f, y smoothed:%f\n", x_smoothed[i], y_smoothed[i]);
       }
-      */
 
-/*
+
+
       // apply smoothing and output images
       // second pass over files
 
@@ -379,7 +379,7 @@ main(int argc, char **argv)
         printf("after write\n");
       }
 
-      */
+
     }
     else {
       // Unrecognized program argument
