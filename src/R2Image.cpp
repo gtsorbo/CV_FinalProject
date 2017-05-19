@@ -729,7 +729,7 @@ findBestFeatures() {
 
     // draw boxes around highest-scoring pixels from highest to lowest, add said pixel to foundFeatures vector
     if(pixelIsValid) {
-      printf("added a valid pixel index: %d x: %d y: %d\n", index, currentPixel.x, currentPixel.y);
+      //printf("added a valid pixel index: %d x: %d y: %d\n", index, currentPixel.x, currentPixel.y);
       foundFeatures.at(featCount) = currentPixel;
       featCount++;
     }
@@ -755,7 +755,7 @@ blendOtherImageTranslated(R2Image * otherImage, std::vector<ContextPixel> foundF
 
   printf("matching features\n");
 
-  double searchMult = 0.08;
+  double searchMult = 0.1;
 
   int searchWidth = width * searchMult;
   int searchHeight = height * searchMult;
@@ -803,7 +803,7 @@ blendOtherImageTranslated(R2Image * otherImage, std::vector<ContextPixel> foundF
     newMatch.y = bestMatch.y;
 
     matchedFeatures.at(i) = newMatch;
-    printf("Matched pixel (%d %d) with translated img pixel (%d %d)\n", curX, curY, newMatch.x, newMatch.y);
+    //printf("Matched pixel (%d %d) with translated img pixel (%d %d)\n", curX, curY, newMatch.x, newMatch.y);
   }
 
   return matchedFeatures;
@@ -842,14 +842,14 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
       vec.y = vec.y2 - vec.y1;
       vec.outlier = false;
       vec.supporters = 0;
-      printf("translationVector %d x: %d y: %d\n", i, vec.x, vec.y);
+      //printf("translationVector %d x: %d y: %d\n", i, vec.x, vec.y);
       translationVectors.at(i) = vec;
     }
 
     int numFeat = 150;
 
     // RANSAC
-    double acceptThresh = 15.0;
+    double acceptThresh = 10.0;
 
     // score each vector based on similarity to other vectors
     for(int i=0; i<translationVectors.size(); i++) {
@@ -876,7 +876,7 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
 
 
     // draw vectors in different colors based on status
-    for(int i=0; i<translationVectors.size(); i++) {
+    for(int i=translationVectors.size()-1; i>=0; i--) {
       TranslationVector comp = translationVectors.at(i);
       int xDiff = comp.x - winner.x;
       int yDiff = comp.y - winner.y;
@@ -885,7 +885,7 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
       comp.outlier = diffLength > acceptThresh;
       if(comp.outlier) {
         line(comp.x1, comp.x2, comp.y1, comp.y2, 1.0, 0.0, 0.0);
-        //translationVectors.erase(translationVectors.begin() + i);
+        translationVectors.erase(translationVectors.begin() + i);
       }
       else {
         line(comp.x1, comp.x2, comp.y1, comp.y2, 0.0, 1.0, 0.0);
@@ -905,8 +905,8 @@ translateImageForStabilization(TranslationVector actualMotion, double x_sm, doub
     }
   }
 
-  double XDiff = (actualMotion.x2-actualMotion.x1) - x_sm;
-  double YDiff = (actualMotion.y2-actualMotion.y1) - y_sm;
+  double XDiff = (actualMotion.x) - x_sm;
+  double YDiff = (actualMotion.y) - y_sm;
 
   printf("xdiff:%f ydiff:%f\n", XDiff, YDiff);
 

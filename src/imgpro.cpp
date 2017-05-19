@@ -281,14 +281,44 @@ main(int argc, char **argv)
         // find matched features in next image
         matchedFeatures = image->blendOtherImageTranslated(other_image, foundFeatures);
         std::vector<TranslationVector> vectors = image-> vectorRANSAC(foundFeatures, matchedFeatures);
-        TranslationVector winner = vectors.at(0);
-        motionVectors.push_back(winner);
-        foundFeatures = matchedFeatures;
-        printf("x1: %d y1: %d x2: %d y2: %d\n", winner.x1, winner.y1, winner.x2, winner.y2);
+        double avg_x = 0.0;
+        double avg_y = 0.0;
 
-        //image->Write(output_image_name);
+        for(int i=0; i<vectors.size(); i++) {
+          TranslationVector vec = vectors.at(i);
+          avg_x += vec.x2 - vec.x1;
+          avg_y += vec.y2 - vec.y1;
+        }
+        avg_x = avg_x/vectors.size();
+        avg_y = avg_y/vectors.size();
+
+        TranslationVector motionVec;
+        motionVec.x = avg_x;
+        motionVec.y = avg_y;
+        motionVectors.push_back(motionVec);
+
+        std::vector<ContextPixel> RANSACDmatchedFeatures;
+        for(int i=0; i<vectors.size(); i++) {
+          ContextPixel pix;
+          TranslationVector vec = vectors.at(i);
+          pix.x = vec.x2;
+          pix.y = vec.y2;
+          for(int j=0; j<matchedFeatures.size(); j++) {
+            ContextPixel matchPix;
+            if(matchPix.x == pix.x && matchPix.y == pix.y) {
+              pix.pixel = matchPix.pixel;
+            }
+          }
+          RANSACDmatchedFeatures.push_back(pix);
+        }
+
+        foundFeatures = RANSACDmatchedFeatures;
+        //printf("x1: %d y1: %d x2: %d y2: %d\n", winner.x1, winner.y1, winner.x2, winner.y2);
+
+        image->Write(output_image_name);
       }
 
+/*
       // Smoothing function
       double x_smoothed[motionVectors.size()];
       double y_smoothed[motionVectors.size()];
@@ -309,21 +339,23 @@ main(int argc, char **argv)
             fixedIndex = motionVectors.size()-1;
           }
           TranslationVector vec = motionVectors.at(fixedIndex);
-          x_sum += vec.x2 - vec.x1;
-          y_sum += vec.y2 - vec.y1;
+          x_sum += vec.x;
+          y_sum += vec.y;
         }
 
         x_smoothed[i] = x_sum / blur_width*2+1;
         y_smoothed[i] = y_sum / blur_width*2+1;
         //printf("x smoothed: %f, y smoothed:%f\n", x_smoothed[i], y_smoothed[i]);
       }
+      */
 
+/*
       // apply smoothing and output images
       // second pass over files
 
       // Process translations
       for (int i=0; i<motionVectors.size(); i++) {
-        int current_count = i+1;
+        int current_count = start_count + i;
 
         // Filename incrementing
         image_count_1 = std::to_string(current_count);
@@ -342,9 +374,12 @@ main(int argc, char **argv)
         printf("Adjusting: %s\n", image_name_1.c_str());
         image->translateImageForStabilization(motionVectors.at(i), x_smoothed[i], y_smoothed[i]);
         printf("after stabilization\n");
+
         image->Write(output_image_name);
         printf("after write\n");
       }
+
+      */
     }
     else {
       // Unrecognized program argument
