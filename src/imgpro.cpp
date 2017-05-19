@@ -318,7 +318,7 @@ main(int argc, char **argv)
         //image->Write(output_image_name);
       }
 
-
+/*
       // Smoothing function
       double x_smoothed[motionVectors.size()];
       double y_smoothed[motionVectors.size()];
@@ -347,7 +347,20 @@ main(int argc, char **argv)
         y_smoothed[i] = y_sum / blur_width*2+1;
         //printf("x smoothed: %f, y smoothed:%f\n", x_smoothed[i], y_smoothed[i]);
       }
+      */
 
+      double x_avg = 0.0;
+      double y_avg = 0.0;
+
+      for(int i=0; i<motionVectors.size(); i++) {
+        TranslationVector vec = motionVectors.at(i);
+        x_avg += vec.x;
+        y_avg += vec.y;
+      }
+
+      x_avg = x_avg / motionVectors.size();
+      y_avg = y_avg / motionVectors.size();
+      printf("x_avg %f y_avg %f\n", x_avg, y_avg);
 
 
       // apply smoothing and output images
@@ -372,9 +385,10 @@ main(int argc, char **argv)
 
         // run stabilization per frame
         printf("Adjusting: %s\n", image_name_1.c_str());
-        image->translateImageForStabilization(motionVectors.at(i), x_smoothed[i], y_smoothed[i]);
+        //image->translateImageForStabilization(motionVectors.at(i), x_smoothed[i], y_smoothed[i]);
+        image->translateImageForStabilization(motionVectors.at(i).x, motionVectors.at(i).y, x_avg, y_avg);
         printf("after stabilization\n");
-
+        printf("about to write\n");
         image->Write(output_image_name);
         printf("after write\n");
       }

@@ -113,7 +113,7 @@ class R2Image {
 
   std::vector<ContextPixel> findBestFeatures();
   std::vector<TranslationVector> vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after);
-  void translateImageForStabilization(TranslationVector actualMotion, double x_sm, double y_sm);
+  void translateImageForStabilization(double x_ac, double y_ac, double x_sm, double y_sm);
 
   // File reading/writing
   int Read(const char *filename);

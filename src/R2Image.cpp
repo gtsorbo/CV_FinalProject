@@ -858,7 +858,6 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
     // score each vector based on similarity to other vectors
     for(int i=0; i<translationVectors.size(); i++) {
       TranslationVector vec1 = translationVectors.at(i);
-      //vec1.supporters = 0;
       for(int j=0; j<translationVectors.size(); j++) {
         TranslationVector vec2 = translationVectors.at(j);
 
@@ -907,8 +906,8 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
 }
 
 void R2Image::
-translateImageForStabilization(TranslationVector actualMotion, double x_sm, double y_sm) {
-  R2Image orig(*this);
+translateImageForStabilization(double x_ac, double y_ac, double x_sm, double y_sm) {
+  R2Image *orig = new R2Image(*this);
 
   for(int x=0; x<width; x++) {
     for(int y=0; y<height; y++) {
@@ -916,15 +915,15 @@ translateImageForStabilization(TranslationVector actualMotion, double x_sm, doub
     }
   }
 
-  double XDiff = (actualMotion.x) - x_sm;
-  double YDiff = (actualMotion.y) - y_sm;
+  double XDiff = round(x_ac - x_sm);
+  double YDiff = round(y_ac - y_sm);
 
   printf("xdiff:%f ydiff:%f\n", XDiff, YDiff);
 
   // move pixels by (smooth - actual) translation diff
-  for(int x=0; x<orig.width; x++) {
-    for(int y=0; y<orig.height; y++) {
-
+  for(int x=0; x<width; x++) {
+    for(int y=0; y<height; y++) {
+      //printf("x %d y %d\n", x, y);
       int newX = x+XDiff;
       int newY = y+YDiff;
       //printf("newX:%d newY:%d\n", newX, newY);
@@ -933,15 +932,14 @@ translateImageForStabilization(TranslationVector actualMotion, double x_sm, doub
         // skip
       }
       else {
-        //printf("moving pixel x:%d y:%d to x:%d y:%d\n", x, y, newX, newY);
-        SetPixel(newX, newY, orig.Pixel(x,y));
+        SetPixel(newX, newY, orig->Pixel(x,y));
+        //printf("moved pixel x:%d y:%d to x:%d y:%d\n", x, y, newX, newY);
       }
     }
   }
+  //printf("made it outside for loop\n");
+  delete orig;
 }
-
-
-
 
 
 double* matrixMult(double** mat, double* vec) {
