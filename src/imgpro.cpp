@@ -375,16 +375,15 @@ main(int argc, char **argv)
 
       x_avg = x_avg / motionVectors.size()+1;
       y_avg = y_avg / motionVectors.size()+1;
-      printf("x_avg %f y_avg %f\n", x_avg, y_avg);
+      //printf("x_avg %f y_avg %f\n", x_avg, y_avg);
 
 
       // apply smoothing and output images
       // second pass over files
 
       // Process translations
-      for (int i=0; i<motionVectors.size(); i++) {
+      for (int i=0; i<motionVectors.size()+1; i++) {
         int current_count = start_count + i;
-
         // Filename incrementing
         image_count_1 = std::to_string(current_count);
         while(image_count_1.length() < count_length) {
@@ -394,18 +393,12 @@ main(int argc, char **argv)
         output_name = token_output + "." + image_count_1 + "_ouput.jpg";
         strcpy(output_image_name, output_name.c_str());
 
-        printf("before new read\n");
         image->Read(image_name_1.c_str());
-        printf("after new read\n");
 
         // run stabilization per frame
         printf("Adjusting: %s\n", image_name_1.c_str());
-        //image->translateImageForStabilization(motionVectors.at(i), x_smoothed[i], y_smoothed[i]);
         image->translateImageForStabilization(x_curve[i], y_curve[i], x_avg, y_avg);
-        printf("after stabilization\n");
-        printf("about to write\n");
         image->Write(output_image_name);
-        printf("after write\n");
       }
 
 

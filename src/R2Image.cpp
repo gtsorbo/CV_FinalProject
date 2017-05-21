@@ -911,7 +911,7 @@ void R2Image::
 translateImageForStabilization(double x_ac, double y_ac, double x_sm, double y_sm) {
   R2Image orig(*this);
 
-  printf("x_ac %f y_ac %f x_sm %f y_sm %f\n", x_ac, y_ac, x_sm, y_sm);
+  //printf("x_ac %f y_ac %f x_sm %f y_sm %f\n", x_ac, y_ac, x_sm, y_sm);
 
   for(int x=0; x<width; x++) {
     for(int y=0; y<height; y++) {
@@ -922,7 +922,7 @@ translateImageForStabilization(double x_ac, double y_ac, double x_sm, double y_s
   double XDiff = x_sm - x_ac;
   double YDiff = y_sm - y_ac;
 
-  printf("xdiff:%f ydiff:%f\n", XDiff, YDiff);
+  //printf("xdiff:%f ydiff:%f\n", XDiff, YDiff);
 
   // move pixels by (smooth - actual) translation diff
   for(int x=0; x<width; x++) {
@@ -932,12 +932,13 @@ translateImageForStabilization(double x_ac, double y_ac, double x_sm, double y_s
       int newY = y+YDiff;
       //printf("newX:%d newY:%d\n", newX, newY);
 
-      if(newX < 0 || newY < 0 || newX > width || newY > height) {
+      if(newX < 0 || newY < 0 || newX > width-1 || newY > height-1) {
         // skip
       }
       else {
-        SetPixel(newX, newY, orig.Pixel(x,y));
-        //printf("moved pixel x:%d y:%d to x:%d y:%d\n", x, y, newX, newY);
+        R2Pixel temp = orig.Pixel(x,y);
+        SetPixel(newX, newY, temp);
+        //printf("moved pixel x:%d y:%d to x:%d y:%d PIXEL R %f G %f B %f\n", x, y, newX, newY, temp.Red(), temp.Green(), temp.Blue());
       }
     }
   }
