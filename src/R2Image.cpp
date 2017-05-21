@@ -877,10 +877,12 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
     }
 
     std::sort(std::begin(translationVectors), std::end(translationVectors), sortByNumSupporters);
+/*
     for(int i=0; i<translationVectors.size(); i++) {
       TranslationVector vec = translationVectors.at(i);
       //printf("TV x1 %d y1 %d x2 %d y2 %d x %d y %d supporters %d\n", vec.x1, vec.y1, vec.x2, vec.y2, vec.x, vec.y, vec.supporters);
     }
+    */
     TranslationVector winner = translationVectors.at(0);
     //printf("winning vector x: %d y: %d supporters: %d\n", winner.x, winner.y, winner.supporters);
 
@@ -907,7 +909,9 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
 
 void R2Image::
 translateImageForStabilization(double x_ac, double y_ac, double x_sm, double y_sm) {
-  R2Image *orig = new R2Image(*this);
+  R2Image orig(*this);
+
+  printf("x_ac %f y_ac %f x_sm %f y_sm %f\n", x_ac, y_ac, x_sm, y_sm);
 
   for(int x=0; x<width; x++) {
     for(int y=0; y<height; y++) {
@@ -915,8 +919,8 @@ translateImageForStabilization(double x_ac, double y_ac, double x_sm, double y_s
     }
   }
 
-  double XDiff = round(x_ac - x_sm);
-  double YDiff = round(y_ac - y_sm);
+  double XDiff = x_sm - x_ac;
+  double YDiff = y_sm - y_ac;
 
   printf("xdiff:%f ydiff:%f\n", XDiff, YDiff);
 
@@ -932,13 +936,12 @@ translateImageForStabilization(double x_ac, double y_ac, double x_sm, double y_s
         // skip
       }
       else {
-        SetPixel(newX, newY, orig->Pixel(x,y));
+        SetPixel(newX, newY, orig.Pixel(x,y));
         //printf("moved pixel x:%d y:%d to x:%d y:%d\n", x, y, newX, newY);
       }
     }
   }
   //printf("made it outside for loop\n");
-  delete orig;
 }
 
 

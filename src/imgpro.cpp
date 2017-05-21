@@ -284,6 +284,7 @@ main(int argc, char **argv)
         double avg_x = 0.0;
         double avg_y = 0.0;
 
+        // find average motion between frames
         for(int i=0; i<vectors.size(); i++) {
           TranslationVector vec = vectors.at(i);
           avg_x += vec.x2 - vec.x1;
@@ -297,6 +298,7 @@ main(int argc, char **argv)
         motionVec.y = avg_y;
         motionVectors.push_back(motionVec);
 
+        // create context pixels to pass along track points
         std::vector<ContextPixel> RANSACDmatchedFeatures;
         for(int i=0; i<vectors.size(); i++) {
           ContextPixel pix;
@@ -349,17 +351,30 @@ main(int argc, char **argv)
       }
       */
 
-      double x_avg = 0.0;
-      double y_avg = 0.0;
+      // plotting motion curve
+      double x_curve[motionVectors.size()+1];
+      double y_curve[motionVectors.size()+1];
+
+      x_curve[0] = 0.0;
+      y_curve[0] = 0.0;
 
       for(int i=0; i<motionVectors.size(); i++) {
         TranslationVector vec = motionVectors.at(i);
-        x_avg += vec.x;
-        y_avg += vec.y;
+        x_curve[i+1] = x_curve[i] + vec.x;
+        y_curve[i+1] = y_curve[i] + vec.y;
       }
 
-      x_avg = x_avg / motionVectors.size();
-      y_avg = y_avg / motionVectors.size();
+      // find average position in sequence (for still motion)
+      double x_avg = 0.0;
+      double y_avg = 0.0;
+
+      for(int i=0; i<=motionVectors.size(); i++) {
+        x_avg += x_curve[i];
+        y_avg += y_curve[i];
+      }
+
+      x_avg = x_avg / motionVectors.size()+1;
+      y_avg = y_avg / motionVectors.size()+1;
       printf("x_avg %f y_avg %f\n", x_avg, y_avg);
 
 
@@ -386,7 +401,7 @@ main(int argc, char **argv)
         // run stabilization per frame
         printf("Adjusting: %s\n", image_name_1.c_str());
         //image->translateImageForStabilization(motionVectors.at(i), x_smoothed[i], y_smoothed[i]);
-        image->translateImageForStabilization(motionVectors.at(i).x, motionVectors.at(i).y, x_avg, y_avg);
+        image->translateImageForStabilization(x_curve[i], y_curve[i], x_avg, y_avg);
         printf("after stabilization\n");
         printf("about to write\n");
         image->Write(output_image_name);
