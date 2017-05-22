@@ -258,7 +258,7 @@ main(int argc, char **argv)
       std::vector<ContextPixel> matchedFeatures;
       std::vector<TranslationVector> motionVectors;
 
-      // Process translations
+      // matching pass
       while (image->Read(image_name_1.c_str()) && other_image->Read(image_name_2.c_str())) {
         printf("%s  %s\n", image_name_1.c_str(), image_name_2.c_str());
 
@@ -277,6 +277,11 @@ main(int argc, char **argv)
         image_name_2 = token + "." + image_count_2 + ".jpg";
         output_name = token_output + "." + image_count_1 + "_ouput.jpg";
         strcpy(output_image_name, output_name.c_str());
+
+        // Recovery -- will re-track features if RANSAC kills off too many
+        if(foundFeatures.size() < 30) {
+          foundFeatures = image->findBestFeatures();
+        }
 
         // find matched features in next image
         matchedFeatures = image->blendOtherImageTranslated(other_image, foundFeatures);
@@ -315,9 +320,6 @@ main(int argc, char **argv)
         }
 
         foundFeatures = RANSACDmatchedFeatures;
-        //printf("x1: %d y1: %d x2: %d y2: %d\n", winner.x1, winner.y1, winner.x2, winner.y2);
-
-        //image->Write(output_image_name);
       }
 
 /*

@@ -1,5 +1,28 @@
-This directory contains skeleton code as a starting point for the Computer Vision HW. 
+COMPUTER VISION APPLICATIONS FOR DIGITAL CINEMA POST-PRODUCTION
+AQUINCUM INSTITUTE OF TECHNOLOGY
+BUDAPEST, HUNGARY
+SPRING 2017
 
+Final Project: Video Stabilization
+Grant Sorbo and Ionatan Kuperwajs
+
+**See runme.sh for example commands for processing video files**
+
+USAGE OVERVIEW
+==============
+
+1. Use ffmpeg to convert a video file to a JPEG image sequence
+2. Run imgpro with the -stabilize command (and any arbitrary value as input)
+	-input: the first jpg image in the sequence
+	-output: location and naming convention of the first image
+3. Imgpro will process translation data throughout your image sequence, outputting new frames to eliminate motion
+4. Use ffmpeg to convert the output image sequence back to a video file
+
+FEATURES
+========
+
+-RANSAC elimination: calculates accurate tracks by eliminating outliers for the current and future frames
+-Automatic large motion recovery: if too many tracking points disappear, the program will re-track new points to continue providing accurate translation data
 
 FILE STRUCTURE
 ==============

@@ -896,11 +896,11 @@ vectorRANSAC(std::vector<ContextPixel> before, std::vector<ContextPixel> after) 
       // if the length of the difference vector is less than the threshold
       comp.outlier = diffLength > acceptThresh;
       if(comp.outlier) {
-        line(comp.x1, comp.x2, comp.y1, comp.y2, 1.0, 0.0, 0.0);
+        //line(comp.x1, comp.x2, comp.y1, comp.y2, 1.0, 0.0, 0.0);
         translationVectors.erase(translationVectors.begin() + i);
       }
       else {
-        line(comp.x1, comp.x2, comp.y1, comp.y2, 0.0, 1.0, 0.0);
+        //line(comp.x1, comp.x2, comp.y1, comp.y2, 0.0, 1.0, 0.0);
       }
     }
 
